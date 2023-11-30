@@ -3,7 +3,7 @@ const app = express()
 const cors = require('cors')
 require('dotenv').config();
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 app.use(express.json());
@@ -29,8 +29,58 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-const database = 
+const userCollection = client.db('Car-Service').collection('CarUser');
+const serviceCollection = client.db('Car-Service').collection('Service');
+const bookedCollection = client.db('Car-Service').collection('Booking');
 
+app.post('/users', async(req, res)=>{
+  const user = req.body;
+  console.log(user);
+  const result = await userCollection.insertOne(user);
+  res.send(result);
+});
+
+app.get("/users", async (req, res) => {
+const cursor = userCollection.find();
+const result = await cursor.toArray();
+res.send(result)
+});
+
+app.get("/users/:id", async (req, res) =>{
+  const id = req.params.id;
+  const query = {_id: new ObjectId(id)};
+  const user = await userCollection.findOne(query);
+  res.send(user)
+});
+
+app.get("/services", async (req, res) => {
+const cursor = serviceCollection.find();
+const result = await cursor.toArray();
+res.send(result)
+});
+
+app.get("/services/:id", async(req, res) =>{
+  const id = req.params.id;
+  const query = {_id: new ObjectId(id)};
+
+  const options = {
+    projection: {
+      title:1,
+      service_id: 1,
+      price: 1,
+    }
+  }
+  const service = await serviceCollection.findOne(query, options);
+  res.send(service);
+});
+
+app.post("/checkout", async(req, res) =>{
+  const bookedService = req.body;
+  console.log(bookedService);
+  const result = await bookedCollection.insertOne(bookedService);
+  res.send(result);
+
+})
 
 
     // Send a ping to confirm a successful connection
