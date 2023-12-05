@@ -34,7 +34,7 @@ if(!authorization){
   return res.status(401).send({error: true, message:'unauthorized access'});
 }
 const token = authorization.split(' ')[1]
-// const decoded = jwt.verify(token, process.env.ACCESS_TOKEN);
+const decoded = jwt.verify(token, process.env.ACCESS_TOKEN);
 
 jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded)=>{
   if(error){
@@ -117,6 +117,7 @@ app.get("/bookings", verifyJWT, async(req, res)=>{
   console.log('comeback after verify');
 
   const decoded = req.decoded;
+  console.log(decoded);
   if(decoded.email !== req.query.email){
     return res.status(404).send({error: true, message:'unauthorized error'})
   };
@@ -141,7 +142,6 @@ app.delete('/bookings/:id', async (req, res) =>{
       res.send(query)
 });
 
-const { ObjectId } = require('mongodb');
 
 app.patch('/bookings/:id', async (req, res) => {
   const id = req.params.id;
