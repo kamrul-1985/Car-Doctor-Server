@@ -3,7 +3,7 @@
       "builds": [
             { 
                   "src": "index.js", 
-                  "use": "@now/node-server" 
+                  "use": "@vercel/node-server" 
                   }
             ],
       "routes": [
@@ -12,8 +12,6 @@
           "dest": "index.js",
           "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
         }
-      ],
-      "env": {
-        "MONGODB_URI": "mongodb+srv://${process.env.SECRET_USER}:${process.env.SECRET_kEY}@cluster0.suysb7o.mongodb.net/?retryWrites=true&w=majority"
-      }
+      ]
+      
     }
