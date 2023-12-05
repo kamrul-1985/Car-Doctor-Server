@@ -1,5 +1,6 @@
 const express = require('express')
 const app = express()
+const jwt = require('jsonwebtoken');
 const cors = require('cors')
 require('dotenv').config();
 const port = process.env.PORT || 5000;
@@ -24,6 +25,28 @@ const client = new MongoClient(uri, {
   }
 });
 
+
+const verifyJWT = (req, res, next)=>{
+console.log('this is from booking');
+console.log(req.headers.authorization);
+const authorization = req.headers.authorization;
+if(!authorization){
+  return res.status(401).send({error: true, message:'unauthorized access'});
+}
+const token = authorization.split(' ')[1]
+// const decoded = jwt.verify(token, process.env.ACCESS_TOKEN);
+
+jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded)=>{
+  if(error){
+    return res.status(403).send({error: true, message:'unauthorized access'});
+  }
+   req.decoded = decoded;
+   console.log(decoded);
+   next();
+});
+}
+
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -32,6 +55,14 @@ async function run() {
 const userCollection = client.db('Car-Service').collection('CarUser');
 const serviceCollection = client.db('Car-Service').collection('Service');
 const bookedCollection = client.db('Car-Service').collection('Booking');
+
+
+app.post('/jwt', async (req, res)=>{
+  const user = req.body;
+  console.log(user);
+  const token = jwt.sign(user, process.env.ACCESS_TOKEN, {expiresIn:'1h'});
+  res.send({token})
+})
 
 app.post('/users', async(req, res)=>{
   const user = req.body;
@@ -62,12 +93,12 @@ res.send(result)
 app.get("/services/:id", async(req, res) =>{
   const id = req.params.id;
   const query = {_id: new ObjectId(id)};
-
   const options = {
     projection: {
       title:1,
       service_id: 1,
       price: 1,
+      img:1
     }
   }
   const service = await serviceCollection.findOne(query, options);
@@ -76,11 +107,57 @@ app.get("/services/:id", async(req, res) =>{
 
 app.post("/checkout", async(req, res) =>{
   const bookedService = req.body;
-  console.log(bookedService);
   const result = await bookedCollection.insertOne(bookedService);
   res.send(result);
+});
 
-})
+
+app.get("/bookings", verifyJWT, async(req, res)=>{
+
+  console.log('comeback after verify');
+
+  const decoded = req.decoded;
+  if(decoded.email !== req.query.email){
+    return res.status(404).send({error: true, message:'unauthorized error'})
+  };
+  let query = {};
+  if(req.query?.email){
+    query = {email: req.query.email}
+  }
+  try {
+    const cursor = bookedCollection.find(query);
+    const result = await cursor.toArray();
+    res.send(result);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.delete('/bookings/:id', async (req, res) =>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await bookedCollection.deleteOne(query);
+      res.send(query)
+});
+
+const { ObjectId } = require('mongodb');
+
+app.patch('/bookings/:id', async (req, res) => {
+  const id = req.params.id;
+  const filter = { _id: new ObjectId(id) };
+  const updateBooking = req.body;
+
+  const updateDoc = {
+    $set: {
+      status: updateBooking.status,
+    },
+  };
+
+  const result = await bookedCollection.updateOne(filter, updateDoc);
+  res.send(result);
+
+});
 
 
     // Send a ping to confirm a successful connection
