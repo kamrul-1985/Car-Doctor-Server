@@ -27,8 +27,6 @@ const client = new MongoClient(uri, {
 
 
 const verifyJWT = (req, res, next)=>{
-console.log('this is from booking');
-console.log(req.headers.authorization);
 const authorization = req.headers.authorization;
 if(!authorization){
   return res.status(401).send({error: true, message:'unauthorized access'});
@@ -107,15 +105,15 @@ app.get("/services/:id", async(req, res) =>{
 
 app.post("/checkout", async(req, res) =>{
   const bookedService = req.body;
+  console.log('this is booking');
+  console.log();
   const result = await bookedCollection.insertOne(bookedService);
   res.send(result);
 });
 
 
 app.get("/bookings", verifyJWT, async(req, res)=>{
-
   console.log('comeback after verify');
-
   const decoded = req.decoded;
   console.log(decoded);
   if(decoded.email !== req.query.email){
