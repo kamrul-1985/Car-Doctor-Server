@@ -28,6 +28,7 @@ const client = new MongoClient(uri, {
 
 const verifyJWT = (req, res, next)=>{
 const authorization = req.headers.authorization;
+console.log('from verify');
 if(!authorization){
   return res.status(401).send({error: true, message:'unauthorized access'});
 }
@@ -45,10 +46,23 @@ jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded)=>{
 }
 
 
-async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+// async function run() {
+//   try {
+//     // Connect the client to the server	(optional starting in v4.7)
+//     await client.connect();
+
+    // copy from youga school server
+    const dbConnect = async () => {
+      try {
+        client.connect();
+        console.log("Database Connected Successfully✅");
+    
+      } catch (error) {
+        console.log(error.name, error.message);
+      }
+    }
+    dbConnect();
+
 
 const userCollection = client.db('Car-Service').collection('CarUser');
 const serviceCollection = client.db('Car-Service').collection('Service');
@@ -57,7 +71,7 @@ const bookedCollection = client.db('Car-Service').collection('Booking');
 
 app.post('/jwt', async (req, res)=>{
   const user = req.body;
-  console.log(user);
+  
   const token = jwt.sign(user, process.env.ACCESS_TOKEN, {expiresIn:'1h'});
   res.send({token})
 })
@@ -103,19 +117,18 @@ app.get("/services/:id", async(req, res) =>{
   res.send(service);
 });
 
-app.post("/checkout", async(req, res) =>{
-  const bookedService = req.body;
-  console.log('this is booking');
-  console.log();
-  const result = await bookedCollection.insertOne(bookedService);
+app.post("/checkout", async(req, res) => {
+  const bookings = req.body
+  console.log('this is from booking');
+  const result = await bookedCollection.insertOne(bookings);
   res.send(result);
 });
 
+// app.use(verifyJWT);
 
 app.get("/bookings", verifyJWT, async(req, res)=>{
   console.log('comeback after verify');
   const decoded = req.decoded;
-  console.log(decoded);
   if(decoded.email !== req.query.email){
     return res.status(404).send({error: true, message:'unauthorized error'})
   };
@@ -157,16 +170,18 @@ app.patch('/bookings/:id', async (req, res) => {
 
 });
 
+// // ***commented because dbConnected function replaced run function
 
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
-  }
-}
-run().catch(console.dir);
+
+//     // Send a ping to confirm a successful connection
+//     await client.db("admin").command({ ping: 1 });
+//     console.log("Pinged your deployment. You successfully connected to MongoDB!");
+//   } finally {
+//     // Ensures that the client will close when you finish/error
+//     // await client.close();
+//   }
+// }
+// run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
